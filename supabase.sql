@@ -3,6 +3,7 @@ create table if not exists public.ta_members (
   name text not null,
   role text,
   color text not null,
+  avatar_data text,
   created_at timestamptz not null default now()
 );
 
@@ -42,6 +43,8 @@ create table if not exists public.ta_settings (
 insert into public.ta_settings (id, title, subtitle)
 values ('shared', 'Our Achievements', 'TA team dashboard — set goals, move through milestones, and celebrate wins together.')
 on conflict (id) do nothing;
+
+alter table public.ta_members add column if not exists avatar_data text;
 
 alter table public.ta_members enable row level security;
 alter table public.ta_goals enable row level security;

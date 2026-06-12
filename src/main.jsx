@@ -17,7 +17,11 @@ const DEFAULT_SETTINGS = {
   subtitle: 'TA team dashboard — set goals, move through milestones, and celebrate wins together.',
 };
 
-const COLORS = ['#E12B4C', '#9A4E97', '#5E6FB6', '#16A085', '#F39C12', '#2C7BE5', '#C0392B', '#6C5CE7'];
+const COLORS = [
+  '#E12B4C', '#9A4E97', '#5E6FB6', '#16A085', '#F39C12', '#2C7BE5',
+  '#C0392B', '#6C5CE7', '#00A6A6', '#FF6B6B', '#7B61FF', '#2E86AB',
+  '#D65DB1', '#008F7A', '#B8860B', '#34495E', '#E67E22', '#4D8076',
+];
 const TABS = ['Overview', 'Goals', 'Analytics', 'Wins', 'Gallery'];
 const USER_KEY = 'proxet-ta-current-user';
 
@@ -66,12 +70,33 @@ function isDeadlineNear(deadline) {
   return days >= 0 && days <= 7;
 }
 
+function normalizeMilestone(step) {
+  if (typeof step === 'string') {
+    return { id: uid('step'), label: step, deadline: '', imageData: '', done: false };
+  }
+  return {
+    id: step.id || uid('step'),
+    label: step.label || '',
+    deadline: step.deadline || '',
+    imageData: step.imageData || step.image_data || '',
+    done: Boolean(step.done),
+  };
+}
+
+function nearestMilestoneDeadline(goal) {
+  return (goal.milestones || [])
+    .map((step) => step.deadline)
+    .filter(Boolean)
+    .sort((a, b) => new Date(a) - new Date(b))[0] || '';
+}
+
 function normalizeMember(row) {
   return {
     id: row.id,
     name: row.name,
     role: row.role || '',
     color: row.color || COLORS[0],
+    avatarData: row.avatar_data || row.avatarData || '',
     createdAt: row.created_at || row.createdAt || nowIso(),
   };
 }
@@ -82,7 +107,7 @@ function normalizeGoal(row) {
     memberId: row.member_id || row.memberId,
     title: row.title,
     deadline: row.deadline || '',
-    milestones: row.milestones || [],
+    milestones: (row.milestones || []).map(normalizeMilestone),
     createdAt: row.created_at || row.createdAt || nowIso(),
   };
 }
@@ -110,7 +135,7 @@ function normalizePhoto(row) {
 
 function toDbPayload(type, item) {
   if (type === 'members') {
-    return { id: item.id, name: item.name, role: item.role, color: item.color, created_at: item.createdAt };
+    return { id: item.id, name: item.name, role: item.role, color: item.color, avatar_data: item.avatarData || null, created_at: item.createdAt };
   }
   if (type === 'goals') {
     return {
@@ -326,8 +351,20 @@ function App() {
       memberId: currentUser.id,
       title: values.title,
       deadline: values.deadline,
-      milestones: values.milestones.map((label) => ({ id: uid('step'), label, done: false })),
+      milestones: values.milestones.map((step) => ({ ...step, id: step.id || uid('step'), done: Boolean(step.done) })),
       createdAt: nowIso(),
+    });
+    setModal(null);
+    setActiveTab('Goals');
+  };
+
+  const saveGoal = async (goal, values) => {
+    if (goal.memberId !== currentUser?.id) return;
+    await board.upsert('goals', {
+      ...goal,
+      title: values.title,
+      deadline: values.deadline,
+      milestones: values.milestones.map((step) => ({ ...step, id: step.id || uid('step'), done: Boolean(step.done) })),
     });
     setModal(null);
     setActiveTab('Goals');
@@ -413,7 +450,7 @@ function App() {
                 style={{ '--member-color': member.color }}
                 onClick={() => setUser(member.id)}
               >
-                <span className="dot" />{member.name}
+                <MiniAvatar member={member} />{member.name}
               </button>
             ))}
             <button className="chip add-chip" onClick={() => setModal('member')}>+ Add yourself</button>
@@ -438,7 +475,16 @@ function App() {
         <section className="panel" key={activeTab}>
           {board.loading && <div className="empty">Loading board...</div>}
           {!board.loading && activeTab === 'Overview' && <Overview members={board.members} goals={board.goals} wins={board.wins} onAdd={() => setModal('member')} />}
-          {!board.loading && activeTab === 'Goals' && <Goals goals={board.goals} members={memberById} currentUser={currentUser} onToggle={toggleStep} onAdd={() => setModal(currentUser ? 'goal' : 'member')} />}
+          {!board.loading && activeTab === 'Goals' && (
+            <Goals
+              goals={board.goals}
+              members={memberById}
+              currentUser={currentUser}
+              onToggle={toggleStep}
+              onAdd={() => setModal(currentUser ? 'goal' : 'member')}
+              onEdit={(goal) => setModal({ type: 'goal', goal })}
+            />
+          )}
           {!board.loading && activeTab === 'Analytics' && <Analytics members={board.members} goals={board.goals} wins={board.wins} />}
           {!board.loading && activeTab === 'Wins' && <Wins wins={board.wins} members={memberById} onAdd={() => setModal(currentUser ? 'win' : 'member')} />}
           {!board.loading && activeTab === 'Gallery' && <Gallery photos={board.photos} members={memberById} currentUser={currentUser} onAdd={() => setModal(currentUser ? 'photo' : 'member')} onDelete={(id) => board.remove('photos', id)} />}
@@ -452,6 +498,7 @@ function App() {
 
       {modal === 'member' && <MemberModal onSave={addMember} onClose={() => setModal(null)} />}
       {modal === 'goal' && <GoalModal onSave={addGoal} onClose={() => setModal(null)} />}
+      {modal?.type === 'goal' && <GoalModal goal={modal.goal} onSave={(values) => saveGoal(modal.goal, values)} onClose={() => setModal(null)} />}
       {modal === 'win' && <WinModal onSave={addWin} onClose={() => setModal(null)} />}
       {modal === 'photo' && <PhotoModal onSave={addPhoto} onClose={() => setModal(null)} />}
     </div>
@@ -512,7 +559,7 @@ function Overview({ members, goals, wins, onAdd }) {
   );
 }
 
-function Goals({ goals, members, currentUser, onToggle, onAdd }) {
+function Goals({ goals, members, currentUser, onToggle, onAdd, onEdit }) {
   return (
     <div className="section-stack">
       <div className="section-head">
@@ -524,19 +571,24 @@ function Goals({ goals, members, currentUser, onToggle, onAdd }) {
         {goals.map((goal) => {
           const owner = members.get(goal.memberId) || { name: 'Unknown', color: '#9A4E97' };
           const progress = goalProgress(goal);
+          const nearestDeadline = nearestMilestoneDeadline(goal) || goal.deadline;
+          const canEdit = goal.memberId === currentUser?.id;
           return (
             <article className={`goal-card ${goal.memberId !== currentUser?.id ? 'locked' : ''}`} key={goal.id}>
               <div className="goal-meta">
                 <span className="owner" style={{ '--member-color': owner.color }}><span className="dot" />{owner.name}</span>
-                <span className={`status ${goalStatus(goal).replace(' ', '-').toLowerCase()}`}>{goalStatus(goal)}</span>
+                <div className="goal-actions">
+                  {canEdit && <button className="text-button" onClick={() => onEdit(goal)}>Edit</button>}
+                  <span className={`status ${goalStatus(goal).replace(' ', '-').toLowerCase()}`}>{goalStatus(goal)}</span>
+                </div>
               </div>
               <div className="goal-title-row">
                 <h3>{goal.title}</h3>
-                {isDeadlineNear(goal.deadline) && <span className="deadline-dot" title="Deadline is near" />}
+                {isDeadlineNear(nearestDeadline) && <span className="deadline-dot" title="Deadline is near" />}
               </div>
               <div className="goal-subline">
                 <span>{progress.done}/{progress.total} steps</span>
-                {goal.deadline && <span>due {formatDate(goal.deadline)}</span>}
+                {nearestDeadline && <span>next due {formatDate(nearestDeadline)}</span>}
                 <strong>{progress.percent}%</strong>
               </div>
               <Timeline goal={goal} disabled={goal.memberId !== currentUser?.id} onToggle={onToggle} />
@@ -567,6 +619,8 @@ function Timeline({ goal, disabled, onToggle }) {
             >
               <span>{step.done ? '✓' : index + 1}</span>
               <em>{step.label}</em>
+              {step.deadline && <small>due {formatDate(step.deadline)}</small>}
+              {step.imageData && <img src={step.imageData} alt={`${step.label} milestone`} />}
             </button>
           );
         })}
@@ -782,48 +836,98 @@ function WeeklyChart({ weeks }) {
 }
 
 function Avatar({ member }) {
-  return <div className="avatar" style={{ '--member-color': member.color }}>{initials(member.name)}</div>;
+  return (
+    <div className="avatar" style={{ '--member-color': member.color }}>
+      {member.avatarData ? <img src={member.avatarData} alt={`${member.name} avatar`} /> : initials(member.name)}
+    </div>
+  );
+}
+
+function MiniAvatar({ member }) {
+  return (
+    <span className="mini-avatar" style={{ '--member-color': member.color }}>
+      {member.avatarData ? <img src={member.avatarData} alt="" /> : initials(member.name)}
+    </span>
+  );
 }
 
 function MemberModal({ onSave, onClose }) {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [color, setColor] = useState(COLORS[0]);
+  const [avatarData, setAvatarData] = useState('');
+  const [busy, setBusy] = useState(false);
+  const handleAvatar = async (file) => {
+    if (!file) {
+      setAvatarData('');
+      return;
+    }
+    setBusy(true);
+    setAvatarData(await compressImage(file));
+    setBusy(false);
+  };
   return (
     <Modal title="Add member" onClose={onClose}>
-      <form onSubmit={(event) => { event.preventDefault(); if (name.trim()) onSave({ name: name.trim(), role: role.trim(), color }); }}>
+      <form onSubmit={(event) => { event.preventDefault(); if (name.trim()) onSave({ name: name.trim(), role: role.trim(), color, avatarData }); }}>
+        {avatarData && <img className="form-preview avatar-preview" src={avatarData} alt="Member avatar preview" />}
         <label>Name<input value={name} onChange={(event) => setName(event.target.value)} required /></label>
         <label>Role<input value={role} onChange={(event) => setRole(event.target.value)} /></label>
+        <label>Photo (optional)<input type="file" accept="image/*" onChange={(event) => handleAvatar(event.target.files?.[0])} /></label>
         <span className="field-title">Color</span>
         <div className="swatches">{COLORS.map((item) => <button type="button" aria-label={item} className={item === color ? 'selected' : ''} style={{ background: item }} key={item} onClick={() => setColor(item)} />)}</div>
-        <ModalActions onClose={onClose} />
+        <ModalActions onClose={onClose} disabled={busy} />
       </form>
     </Modal>
   );
 }
 
-function GoalModal({ onSave, onClose }) {
-  const [title, setTitle] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [milestones, setMilestones] = useState(['Sourcing', 'Screening', 'Interview', 'Offer']);
-  const update = (index, value) => setMilestones(milestones.map((item, itemIndex) => (itemIndex === index ? value : item)));
-  const clean = milestones.map((item) => item.trim()).filter(Boolean);
+function GoalModal({ goal, onSave, onClose }) {
+  const [title, setTitle] = useState(goal?.title || '');
+  const [deadline, setDeadline] = useState(goal?.deadline || '');
+  const [milestones, setMilestones] = useState(() => (
+    goal?.milestones?.length
+      ? goal.milestones.map(normalizeMilestone)
+      : ['Sourcing', 'Screening', 'Interview', 'Offer'].map((label) => ({ id: uid('step'), label, deadline: '', imageData: '', done: false }))
+  ));
+  const [busy, setBusy] = useState(false);
+  const update = (index, patch) => setMilestones(milestones.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
+  const handleStepImage = async (index, file) => {
+    if (!file) return;
+    setBusy(true);
+    update(index, { imageData: await compressImage(file) });
+    setBusy(false);
+  };
+  const clean = milestones
+    .map((item) => ({ ...item, label: item.label.trim() }))
+    .filter((item) => item.label);
   return (
-    <Modal title="Add goal" onClose={onClose}>
+    <Modal title={goal ? 'Edit goal' : 'Add goal'} onClose={onClose}>
       <form onSubmit={(event) => { event.preventDefault(); if (title.trim() && clean.length) onSave({ title: title.trim(), deadline, milestones: clean }); }}>
         <label>Goal<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label>
+        <label>Deadline (optional)<input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /></label>
         <span className="field-title">Milestones</span>
         <div className="steps">
           {milestones.map((step, index) => (
-            <div key={index}>
-              <input value={step} onChange={(event) => update(index, event.target.value)} required={index === 0} />
-              <button type="button" onClick={() => setMilestones(milestones.filter((_, itemIndex) => itemIndex !== index))} disabled={milestones.length === 1}>Remove</button>
+            <div className="step-editor" key={step.id}>
+              <div className="step-fields">
+                <input aria-label="Milestone" value={step.label} onChange={(event) => update(index, { label: event.target.value })} required={index === 0} />
+                <input aria-label="Milestone deadline" type="date" value={step.deadline} onChange={(event) => update(index, { deadline: event.target.value })} />
+                <input aria-label="Milestone photo" type="file" accept="image/*" onChange={(event) => handleStepImage(index, event.target.files?.[0])} />
+              </div>
+              <div className="step-tools">
+                {step.imageData && (
+                  <>
+                    <img className="form-preview step-preview" src={step.imageData} alt={`${step.label || 'Milestone'} preview`} />
+                    <button type="button" onClick={() => update(index, { imageData: '' })}>Remove photo</button>
+                  </>
+                )}
+                <button type="button" onClick={() => setMilestones(milestones.filter((_, itemIndex) => itemIndex !== index))} disabled={milestones.length === 1}>Remove</button>
+              </div>
             </div>
           ))}
         </div>
-        <button className="secondary" type="button" onClick={() => setMilestones([...milestones, ''])}>Add step</button>
-        <label>Deadline (optional)<input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /></label>
-        <ModalActions onClose={onClose} />
+        <button className="secondary" type="button" onClick={() => setMilestones([...milestones, { id: uid('step'), label: '', deadline: '', imageData: '', done: false }])}>Add step</button>
+        <ModalActions onClose={onClose} disabled={busy} />
       </form>
     </Modal>
   );
@@ -882,11 +986,11 @@ function Modal({ title, children, onClose }) {
   );
 }
 
-function ModalActions({ onClose }) {
+function ModalActions({ onClose, disabled = false }) {
   return (
     <div className="modal-actions">
       <button type="button" className="secondary" onClick={onClose}>Cancel</button>
-      <button type="submit" className="primary">Save</button>
+      <button type="submit" className="primary" disabled={disabled}>{disabled ? 'Saving...' : 'Save'}</button>
     </div>
   );
 }
