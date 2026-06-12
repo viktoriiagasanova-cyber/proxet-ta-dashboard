@@ -222,6 +222,10 @@ button:disabled {
   color: #8f285f;
 }
 
+.edit-chip {
+  color: #4656a4;
+}
+
 .stat-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -384,6 +388,10 @@ h2, h3, p {
   background: #fff;
 }
 
+.compact-button {
+  justify-self: start;
+}
+
 .text-button {
   min-height: 30px;
   padding: 0;
@@ -535,13 +543,37 @@ h2, h3, p {
   font-weight: 800;
 }
 
-.node img {
+.node-photos {
+  display: flex;
+  justify-content: center;
+  min-height: 42px;
+  max-width: 98px;
+}
+
+.node-photos img {
   width: 58px;
   height: 42px;
+  margin-left: -22px;
   border: 2px solid #fff;
   border-radius: 10px;
   object-fit: cover;
   box-shadow: 0 8px 18px rgba(32, 33, 48, 0.14);
+}
+
+.node-photos img:first-child {
+  margin-left: 0;
+}
+
+.node-photos strong {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: 4px 0 0 -14px;
+  border-radius: 999px;
+  color: #fff;
+  background: #1b1b2a;
+  font-size: 11px;
 }
 
 .analytics-grid {
@@ -873,6 +905,23 @@ input:focus, textarea:focus {
   width: 92px;
   height: 62px;
   border-radius: 12px;
+}
+
+.step-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.step-preview-grid figure {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.step-preview-grid button {
+  min-height: 30px;
+  font-size: 12px;
 }
 
 .steps {
