@@ -4,3 +4,5 @@ dist/
 .env.local
 .DS_Store
 .vite/
+github-*_ed25519
+github-*_ed25519.pub
