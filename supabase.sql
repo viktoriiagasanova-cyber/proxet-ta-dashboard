@@ -68,6 +68,14 @@ create policy "public read settings" on public.ta_settings for select using (tru
 create policy "public upsert settings" on public.ta_settings for insert with check (true);
 create policy "public update settings" on public.ta_settings for update using (true) with check (true);
 
+grant usage on schema public to anon, authenticated;
+
+grant select, insert, update on public.ta_members to anon, authenticated;
+grant select, insert, update on public.ta_goals to anon, authenticated;
+grant select, insert on public.ta_wins to anon, authenticated;
+grant select, insert, delete on public.ta_photos to anon, authenticated;
+grant select, insert, update on public.ta_settings to anon, authenticated;
+
 alter publication supabase_realtime add table public.ta_members;
 alter publication supabase_realtime add table public.ta_goals;
 alter publication supabase_realtime add table public.ta_wins;
