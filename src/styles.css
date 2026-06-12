@@ -149,7 +149,7 @@ button:disabled {
   background: #fff0f3;
 }
 
-.identity-bar, .stat-card, .member-card, .goal-card, .analytics-card, .win-card, .photo-card, .modal, .add-card {
+.identity-bar, .stat-card, .member-card, .goal-card, .analytics-card, .photo-card, .modal, .add-card {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
@@ -291,7 +291,7 @@ button:disabled {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.member-grid, .wins-grid, .photo-grid {
+.member-grid, .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 16px;
@@ -307,7 +307,7 @@ button:disabled {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.member-card:hover, .goal-card:hover, .win-card:hover, .photo-card:hover, .add-card:hover {
+.member-card:hover, .goal-card:hover, .photo-card:hover, .add-card:hover {
   transform: translateY(-3px);
 }
 
@@ -737,29 +737,6 @@ h2, h3, p {
 .weekly-chart span {
   color: var(--muted);
   font-size: 12px;
-}
-
-.win-card {
-  min-height: 160px;
-  border-left: 6px solid var(--member-color);
-  border-radius: 18px;
-  padding: 18px;
-}
-
-.win-card strong {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 18px;
-}
-
-.win-card p {
-  color: #414252;
-}
-
-.win-card span {
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 750;
 }
 
 .photo-card {

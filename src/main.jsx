@@ -22,7 +22,7 @@ const COLORS = [
   '#C0392B', '#6C5CE7', '#00A6A6', '#FF6B6B', '#7B61FF', '#2E86AB',
   '#D65DB1', '#008F7A', '#B8860B', '#34495E', '#E67E22', '#4D8076',
 ];
-const TABS = ['Overview', 'Goals', 'Analytics', 'Wins', 'Gallery'];
+const TABS = ['Overview', 'Goals', 'Analytics', 'Gallery'];
 const USER_KEY = 'proxet-ta-current-user';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -377,21 +377,6 @@ function App() {
     setActiveTab('Goals');
   };
 
-  const addWin = async (values) => {
-    if (!currentUser) return setModal('member');
-    await board.upsert('wins', {
-      id: uid('win'),
-      memberId: currentUser.id,
-      title: values.title,
-      note: values.note,
-      date: nowIso(),
-      createdAt: nowIso(),
-    });
-    setConfettiSeed((seed) => seed + 1);
-    setModal(null);
-    setActiveTab('Wins');
-  };
-
   const addPhoto = async (values) => {
     if (!currentUser) return setModal('member');
     const imageData = await compressImage(values.file);
@@ -494,7 +479,6 @@ function App() {
             />
           )}
           {!board.loading && activeTab === 'Analytics' && <Analytics members={board.members} goals={board.goals} wins={board.wins} />}
-          {!board.loading && activeTab === 'Wins' && <Wins wins={board.wins} members={memberById} onAdd={() => setModal(currentUser ? 'win' : 'member')} />}
           {!board.loading && activeTab === 'Gallery' && <Gallery photos={board.photos} goals={board.goals} members={memberById} currentUser={currentUser} onAdd={() => setModal(currentUser ? 'photo' : 'member')} onDelete={(id) => board.remove('photos', id)} />}
         </section>
       </main>
@@ -508,7 +492,6 @@ function App() {
       {modal?.type === 'member' && <MemberModal member={modal.member} onSave={saveMember} onClose={() => setModal(null)} />}
       {modal === 'goal' && <GoalModal onSave={addGoal} onClose={() => setModal(null)} />}
       {modal?.type === 'goal' && <GoalModal goal={modal.goal} onSave={(values) => saveGoal(modal.goal, values)} onClose={() => setModal(null)} />}
-      {modal === 'win' && <WinModal onSave={addWin} onClose={() => setModal(null)} />}
       {modal === 'photo' && <PhotoModal onSave={addPhoto} onClose={() => setModal(null)} />}
     </div>
   );
@@ -636,30 +619,6 @@ function Timeline({ goal, disabled, onToggle }) {
                 </div>
               )}
             </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Wins({ wins, members, onAdd }) {
-  return (
-    <div className="section-stack">
-      <div className="section-head">
-        <h2>Wins</h2>
-        <button className="primary" onClick={onAdd}>+ Add win</button>
-      </div>
-      {wins.length === 0 && <div className="empty">No wins logged yet.</div>}
-      <div className="wins-grid">
-        {[...wins].reverse().map((win) => {
-          const owner = members.get(win.memberId) || { name: 'Unknown', color: COLORS[1] };
-          return (
-            <article className="win-card" style={{ '--member-color': owner.color }} key={win.id}>
-              <strong>🏆 {win.title}</strong>
-              {win.note && <p>{win.note}</p>}
-              <span>{owner.name} · {formatDate(win.date)}</span>
-            </article>
           );
         })}
       </div>
@@ -961,20 +920,6 @@ function GoalModal({ goal, onSave, onClose }) {
         </div>
         <button className="secondary" type="button" onClick={() => setMilestones([...milestones, { id: uid('step'), label: '', deadline: '', images: [], done: false }])}>Add step</button>
         <ModalActions onClose={onClose} disabled={busy} />
-      </form>
-    </Modal>
-  );
-}
-
-function WinModal({ onSave, onClose }) {
-  const [title, setTitle] = useState('');
-  const [note, setNote] = useState('');
-  return (
-    <Modal title="Add win" onClose={onClose}>
-      <form onSubmit={(event) => { event.preventDefault(); if (title.trim()) onSave({ title: title.trim(), note: note.trim() }); }}>
-        <label>What happened<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label>
-        <label>Details (optional)<textarea rows="4" value={note} onChange={(event) => setNote(event.target.value)} /></label>
-        <ModalActions onClose={onClose} />
       </form>
     </Modal>
   );
