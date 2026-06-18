@@ -467,7 +467,7 @@ function App() {
 
         <section className="panel" key={activeTab}>
           {board.loading && <div className="empty">Loading board...</div>}
-          {!board.loading && activeTab === 'Overview' && <Overview members={board.members} goals={board.goals} wins={board.wins} onAdd={() => setModal('member')} />}
+          {!board.loading && activeTab === 'Overview' && <Overview members={board.members} goals={board.goals} onAdd={() => setModal('member')} />}
           {!board.loading && activeTab === 'Goals' && (
             <Goals
               goals={board.goals}
@@ -529,25 +529,71 @@ function InlineText({ value, fallback, onSave, className, multiline = false }) {
   return <button className={`${className} inline-text`} onClick={() => setEditing(true)}>{value || fallback}</button>;
 }
 
-function Overview({ members, goals, wins, onAdd }) {
+function Overview({ members, goals, onAdd }) {
   return (
-    <div className="member-grid">
-      {members.map((member) => {
-        const memberGoals = goals.filter((goal) => goal.memberId === member.id).length;
-        const memberWins = wins.filter((win) => win.memberId === member.id).length;
-        return (
-          <article className="member-card" key={member.id}>
-            <Avatar member={member} />
-            <div>
-              <h3>{member.name}</h3>
-              <p>{member.role || 'Talent Acquisition'}</p>
-              <span>{memberGoals} goals · {memberWins} wins</span>
-            </div>
-          </article>
-        );
-      })}
-      <button className="add-card" onClick={onAdd}>+ Add member</button>
+    <div className="overview-stack">
+      <div className="member-grid">
+        {members.map((member) => {
+          const memberGoals = goals.filter((goal) => goal.memberId === member.id).length;
+          return (
+            <article className="member-card" key={member.id}>
+              <Avatar member={member} />
+              <div>
+                <h3>{member.name}</h3>
+                <p>{member.role || 'Talent Acquisition'}</p>
+                <span>{memberGoals} goals</span>
+              </div>
+            </article>
+          );
+        })}
+        <button className="add-card" onClick={onAdd}>+ Add member</button>
+      </div>
+      <TeamOverview members={members} goals={goals} />
     </div>
+  );
+}
+
+function TeamOverview({ members, goals }) {
+  return (
+    <section className="team-overview" aria-label="Talent Acquisition Team">
+      <div className="section-head">
+        <h2>Talent Acquisition Team</h2>
+      </div>
+      {members.length === 0 && <div className="empty">No members yet.</div>}
+      <div className="team-list">
+        {members.map((member) => {
+          const memberGoals = goals.filter((goal) => goal.memberId === member.id);
+          return (
+            <article className="team-member-row" key={member.id} style={{ '--member-color': member.color }}>
+              <div className="team-person">
+                <Avatar member={member} />
+                <div>
+                  <h3>{member.name}</h3>
+                  <p>{member.role || 'Talent Acquisition'}</p>
+                </div>
+              </div>
+              <div className="team-goals-stack">
+                {memberGoals.length === 0 && <div className="team-empty-goal">No goals yet</div>}
+                {memberGoals.map((goal) => {
+                  const progress = goalProgress(goal);
+                  return (
+                    <div className="team-goal-progress" key={goal.id}>
+                      <div className="team-goal-line">
+                        <strong>{goal.title}</strong>
+                        <span>{progress.percent}%</span>
+                      </div>
+                      <div className="team-progress-track" aria-label={`${goal.title} progress ${progress.percent}%`}>
+                        <i style={{ width: `${progress.percent}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
