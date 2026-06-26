@@ -403,6 +403,64 @@ h2, h3, p {
   gap: 8px;
 }
 
+.team-goal-progress.with-cover,
+.team-goal-progress.achievement-row {
+  grid-template-columns: 92px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-goal-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 68px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  background: var(--soft);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.team-goal-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-upload {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  display: block;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #fff;
+  background: rgba(27, 27, 42, 0.78);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.cover-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.team-goal-body {
+  display: grid;
+  gap: 8px;
+}
+
+.team-goal-body p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
 .team-goal-line {
   display: flex;
   align-items: center;
@@ -548,14 +606,14 @@ h2, h3, p {
 .timeline {
   position: relative;
   margin-top: 22px;
-  padding: 0 16px 8px;
+  padding: 0 0 8px;
 }
 
 .track {
   position: absolute;
   top: 20px;
-  left: 36px;
-  right: 36px;
+  left: 46px;
+  right: 46px;
   height: 6px;
   border-radius: 999px;
   background: #edeef4;
@@ -576,15 +634,17 @@ h2, h3, p {
   position: relative;
   z-index: 1;
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 18px 14px;
 }
 
 .node {
   display: grid;
   justify-items: center;
   gap: 8px;
-  width: 104px;
+  flex: 1 1 150px;
+  min-width: 150px;
+  max-width: 220px;
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -615,17 +675,14 @@ h2, h3, p {
 }
 
 .node em {
-  display: -webkit-box;
-  max-width: 104px;
-  min-height: 34px;
-  overflow: hidden;
+  max-width: 100%;
+  min-height: 0;
+  overflow-wrap: anywhere;
   color: #474858;
   font-size: 12px;
   font-style: normal;
   font-weight: 750;
   line-height: 1.2;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .node small {
@@ -650,6 +707,7 @@ h2, h3, p {
   border-radius: 10px;
   object-fit: cover;
   box-shadow: 0 8px 18px rgba(32, 33, 48, 0.14);
+  cursor: zoom-in;
 }
 
 .node-photos img:first-child {
@@ -852,6 +910,232 @@ h2, h3, p {
   margin: 5px 0;
 }
 
+.achievements-page {
+  display: grid;
+  gap: 22px;
+}
+
+.celebration-strip {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.5fr);
+  gap: 18px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(120deg, rgba(225, 43, 76, 0.08), rgba(94, 111, 182, 0.08)),
+    #fff;
+  box-shadow: var(--shadow);
+}
+
+.celebration-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+  background: var(--gradient);
+  font-size: 26px;
+}
+
+.celebration-strip h2 {
+  margin-bottom: 8px;
+  font-size: clamp(30px, 4vw, 52px);
+}
+
+.celebration-strip p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.celebration-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.featured-win {
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.15fr) minmax(240px, 0.85fr);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.featured-win button,
+.achievement-thumb {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.featured-win img,
+.featured-empty {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.featured-empty {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--gradient);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.featured-win > div {
+  padding: 24px;
+}
+
+.featured-win span,
+.achievement-date,
+.achievement-title-line span,
+.achievement-title-line em,
+.hall-of-fame span,
+.hall-of-fame em {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.featured-win h3 {
+  margin: 12px 0;
+  font-size: clamp(28px, 4vw, 48px);
+}
+
+.achievement-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.achievement-timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.achievement-entry {
+  display: grid;
+  grid-template-columns: 86px 34px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.achievement-body {
+  display: grid;
+  gap: 10px;
+}
+
+.achievement-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.achievement-title-line h3 {
+  flex: 1 1 220px;
+  margin-bottom: 0;
+}
+
+.achievement-title-line span,
+.achievement-title-line em {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--soft);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.achievement-title-line em {
+  color: #fff;
+  background: var(--gradient);
+}
+
+.achievement-body p {
+  margin-bottom: 0;
+  color: #414252;
+}
+
+.achievement-thumb {
+  position: relative;
+  justify-self: start;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.achievement-thumb img {
+  width: 160px;
+  height: 104px;
+  object-fit: cover;
+  display: block;
+}
+
+.achievement-thumb strong {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #fff;
+  background: rgba(27, 27, 42, 0.76);
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.badge-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--muted);
+  background: var(--soft);
+}
+
+.badge-card.unlocked {
+  color: var(--ink);
+  background: linear-gradient(120deg, rgba(225, 43, 76, 0.08), rgba(94, 111, 182, 0.1)), #fff;
+  box-shadow: var(--shadow);
+}
+
+.badge-card strong {
+  font-size: 26px;
+}
+
+.badge-card h3 {
+  margin: 10px 0 4px;
+}
+
+.hall-of-fame {
+  display: grid;
+  gap: 10px;
+}
+
+.hall-of-fame article {
+  display: grid;
+  grid-template-columns: 34px minmax(120px, 1fr) auto minmax(180px, 1.3fr);
+  gap: 12px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
 .empty {
   padding: 34px;
   border: 1px dashed #d8d9e5;
@@ -925,7 +1209,7 @@ label, .field-title {
   font-weight: 850;
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   border: 1px solid #dbdce6;
   border-radius: 13px;
@@ -935,7 +1219,7 @@ input, textarea {
   outline: none;
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
   border-color: #9a4e97;
   box-shadow: 0 0 0 4px rgba(154, 78, 151, 0.13);
 }
@@ -1053,6 +1337,30 @@ input:focus, textarea:focus {
   animation-delay: var(--delay);
 }
 
+.lightbox {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(10, 10, 18, 0.86);
+}
+
+.lightbox .icon-button {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+}
+
+.lightbox img {
+  max-width: min(1100px, 100%);
+  max-height: calc(100vh - 80px);
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
 @keyframes confetti {
   from { opacity: 1; transform: translate(0, 0) rotate(0deg); }
   to { opacity: 0; transform: translate(var(--x), 420px) rotate(760deg); }
@@ -1089,7 +1397,7 @@ input:focus, textarea:focus {
     flex-direction: column;
   }
 
-  .stat-strip, .analytics-grid {
+  .stat-strip, .analytics-grid, .celebration-strip, .featured-win, .achievement-filters {
     grid-template-columns: 1fr;
   }
 
@@ -1106,26 +1414,31 @@ input:focus, textarea:focus {
     flex-direction: column;
   }
 
-  .timeline {
-    padding: 0;
-    overflow-x: auto;
-  }
-
   .track {
-    left: 24px;
-    right: 24px;
-    min-width: calc((var(--nodes, 4) - 1) * 110px);
+    display: none;
   }
 
   .nodes {
-    min-width: max-content;
+    min-width: 0;
   }
 
   .node {
-    width: 108px;
+    min-width: 132px;
+    max-width: none;
   }
 
   .progress-row, .step-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .team-goal-progress.with-cover,
+  .team-goal-progress.achievement-row,
+  .achievement-entry,
+  .hall-of-fame article {
+    grid-template-columns: 1fr;
+  }
+
+  .celebration-metrics {
     grid-template-columns: 1fr;
   }
 }

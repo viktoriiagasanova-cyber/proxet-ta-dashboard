@@ -13,6 +13,7 @@ create table if not exists public.ta_goals (
   title text not null,
   deadline date,
   milestones jsonb not null default '[]'::jsonb,
+  cover_image_data text,
   created_at timestamptz not null default now()
 );
 
@@ -21,6 +22,8 @@ create table if not exists public.ta_wins (
   member_id text not null references public.ta_members(id) on delete cascade,
   title text not null,
   note text,
+  category text,
+  image_data text,
   date timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -45,6 +48,9 @@ values ('shared', 'Our Achievements', 'TA team dashboard — set goals, move thr
 on conflict (id) do nothing;
 
 alter table public.ta_members add column if not exists avatar_data text;
+alter table public.ta_goals add column if not exists cover_image_data text;
+alter table public.ta_wins add column if not exists category text;
+alter table public.ta_wins add column if not exists image_data text;
 
 alter table public.ta_members enable row level security;
 alter table public.ta_goals enable row level security;
