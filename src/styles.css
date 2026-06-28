@@ -37,42 +37,9 @@ button:disabled {
   flex-direction: column;
 }
 
-.topbar, main, footer {
+main, footer {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-}
-
-.topbar {
-  height: 74px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-
-.brand-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--gradient);
-  box-shadow: 0 9px 22px rgba(154, 78, 151, 0.3);
-}
-
-.brand-word {
-  font-size: 24px;
-}
-
-.site-link {
-  color: var(--muted);
-  text-decoration: none;
-  font-weight: 700;
 }
 
 .hero {
@@ -1401,16 +1368,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 @media (max-width: 760px) {
-  .topbar, main, footer {
+  main, footer {
     width: min(100% - 22px, 1180px);
-  }
-
-  .topbar {
-    height: 64px;
-  }
-
-  .site-link {
-    font-size: 13px;
   }
 
   .hero {

@@ -491,13 +491,6 @@ function App() {
   return (
     <div className="app">
       <Confetti seed={confettiSeed} />
-      <header className="topbar">
-        <div className="brand" aria-label="Proxet">
-          <span className="brand-mark" />
-          <span className="brand-word">proxet</span>
-        </div>
-        <span className="site-link">Website</span>
-      </header>
 
       <main>
         <section className="hero">
