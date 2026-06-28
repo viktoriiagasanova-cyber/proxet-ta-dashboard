@@ -24,6 +24,7 @@ create table if not exists public.ta_wins (
   note text,
   category text,
   image_data text,
+  images jsonb not null default '[]'::jsonb,
   date timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -51,6 +52,7 @@ alter table public.ta_members add column if not exists avatar_data text;
 alter table public.ta_goals add column if not exists cover_image_data text;
 alter table public.ta_wins add column if not exists category text;
 alter table public.ta_wins add column if not exists image_data text;
+alter table public.ta_wins add column if not exists images jsonb not null default '[]'::jsonb;
 
 alter table public.ta_members enable row level security;
 alter table public.ta_goals enable row level security;

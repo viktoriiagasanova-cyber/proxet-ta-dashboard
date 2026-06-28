@@ -22,9 +22,20 @@ const COLORS = [
   '#C0392B', '#6C5CE7', '#00A6A6', '#FF6B6B', '#7B61FF', '#2E86AB',
   '#D65DB1', '#008F7A', '#B8860B', '#34495E', '#E67E22', '#4D8076',
 ];
-const TABS = ['Overview', 'Goals', 'Analytics', 'Gallery', 'Achievements'];
+const TABS = ['Overview', 'Goals', 'Achievements', 'Analytics', 'Gallery'];
 const USER_KEY = 'proxet-ta-current-user';
-const ACHIEVEMENT_CATEGORIES = ['Hiring', 'Education', 'Community', 'Client feedback', 'Release', 'Award', 'Team moment'];
+const ACHIEVEMENT_CATEGORIES = [
+  '🎓 Education & Learning',
+  '🏃 Health & Sport',
+  '✈️ Travel & Adventure',
+  '🍳 Food & Cooking',
+  '🐾 Animals & Pets',
+  '❤️ Community & Kindness',
+  '🎨 Creativity & Hobbies',
+  '👥 Relationships & Family',
+  '🌟 Personal Growth',
+  '💰 Milestones & Life',
+];
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -142,14 +153,15 @@ function normalizeGoal(row) {
 }
 
 function normalizeWin(row) {
+  const legacyImage = row.image_data || row.imageData || '';
   return {
     id: row.id,
     memberId: row.member_id || row.memberId,
     title: row.title,
     note: row.note || '',
     date: row.date || row.created_at || row.createdAt || nowIso(),
-    category: row.category || 'Team moment',
-    imageData: row.image_data || row.imageData || '',
+    category: row.category || '🌟 Personal Growth',
+    images: Array.isArray(row.images) ? row.images : legacyImage ? [legacyImage] : [],
     createdAt: row.created_at || row.createdAt || nowIso(),
   };
 }
@@ -186,8 +198,9 @@ function toDbPayload(type, item) {
       title: item.title,
       note: item.note,
       date: item.date,
-      category: item.category || 'Team moment',
-      image_data: item.imageData || null,
+      category: item.category || '🌟 Personal Growth',
+      image_data: item.images?.[0] || item.imageData || null,
+      images: item.images || (item.imageData ? [item.imageData] : []),
       created_at: item.createdAt,
     };
   }
@@ -428,7 +441,7 @@ function App() {
 
   const addAchievement = async (values) => {
     if (!currentUser && !values.memberId) return setModal('member');
-    const imageData = values.file ? await compressImage(values.file) : '';
+    const images = values.files?.length ? await Promise.all(values.files.map(compressImage)) : [];
     await board.upsert('wins', {
       id: uid('win'),
       memberId: values.memberId || currentUser.id,
@@ -436,7 +449,7 @@ function App() {
       note: values.note,
       date: values.date || nowIso(),
       category: values.category,
-      imageData,
+      images,
       createdAt: nowIso(),
     });
     setConfettiSeed((seed) => seed + 1);
@@ -534,7 +547,7 @@ function App() {
 
         <section className="panel" key={activeTab}>
           {board.loading && <div className="empty">Loading board...</div>}
-          {!board.loading && activeTab === 'Overview' && <Overview members={board.members} goals={board.goals} wins={board.wins} currentUser={currentUser} onAdd={() => setModal('member')} onGoalCoverChange={saveGoalCover} />}
+          {!board.loading && activeTab === 'Overview' && <Overview members={board.members} goals={board.goals} wins={board.wins} currentUser={currentUser} onAdd={() => setModal('member')} onGoalCoverChange={saveGoalCover} onOpenImage={setLightboxImage} />}
           {!board.loading && activeTab === 'Goals' && (
             <Goals
               goals={board.goals}
@@ -600,7 +613,7 @@ function InlineText({ value, fallback, onSave, className, multiline = false }) {
   return <button className={`${className} inline-text`} onClick={() => setEditing(true)}>{value || fallback}</button>;
 }
 
-function Overview({ members, goals, wins, currentUser, onAdd, onGoalCoverChange }) {
+function Overview({ members, goals, wins, currentUser, onAdd, onGoalCoverChange, onOpenImage }) {
   return (
     <div className="overview-stack">
       <div className="member-grid">
@@ -619,12 +632,12 @@ function Overview({ members, goals, wins, currentUser, onAdd, onGoalCoverChange 
         })}
         <button className="add-card" onClick={onAdd}>+ Add member</button>
       </div>
-      <TeamOverview members={members} goals={goals} wins={wins} currentUser={currentUser} onGoalCoverChange={onGoalCoverChange} />
+      <TeamOverview members={members} goals={goals} wins={wins} currentUser={currentUser} onGoalCoverChange={onGoalCoverChange} onOpenImage={onOpenImage} />
     </div>
   );
 }
 
-function TeamOverview({ members, goals, wins, currentUser, onGoalCoverChange }) {
+function TeamOverview({ members, goals, wins, currentUser, onGoalCoverChange, onOpenImage }) {
   return (
     <section className="team-overview" aria-label="Talent Acquisition Team">
       <div className="section-head">
@@ -648,12 +661,16 @@ function TeamOverview({ members, goals, wins, currentUser, onGoalCoverChange }) 
                 {memberGoals.length === 0 && memberWins.length === 0 && <div className="team-empty-goal">No goals or achievements yet</div>}
                 {memberGoals.map((goal) => {
                   const progress = goalProgress(goal);
-                  const relatedWinImage = memberWins.find((win) => win.title === goal.title)?.imageData || '';
+                  const relatedWinImage = memberWins.find((win) => win.title === goal.title)?.images?.[0] || '';
                   const cover = goal.coverImageData || relatedWinImage || goalCoverImage(goal);
                   return (
                     <div className="team-goal-progress with-cover" key={goal.id}>
                       <div className="team-goal-cover">
-                        {cover ? <img src={cover} alt={`${goal.title} cover`} /> : <span>Photo</span>}
+                        {cover ? (
+                          <button className="image-button" onClick={() => onOpenImage({ src: cover, alt: `${goal.title} cover` })}>
+                            <img src={cover} alt={`${goal.title} cover`} />
+                          </button>
+                        ) : <span>Photo</span>}
                         {goal.memberId === currentUser?.id && (
                           <label className="cover-upload">
                             Edit
@@ -676,7 +693,11 @@ function TeamOverview({ members, goals, wins, currentUser, onGoalCoverChange }) 
                 {memberWins.map((win) => (
                   <div className="team-goal-progress achievement-row" key={win.id}>
                     <div className="team-goal-cover">
-                      {win.imageData ? <img src={win.imageData} alt={`${win.title} achievement`} /> : <span>Win</span>}
+                      {win.images?.[0] ? (
+                        <button className="image-button" onClick={() => onOpenImage({ src: win.images[0], alt: `${win.title} achievement` })}>
+                          <img src={win.images[0]} alt={`${win.title} achievement`} />
+                        </button>
+                      ) : <span>Win</span>}
                     </div>
                     <div className="team-goal-body">
                       <div className="team-goal-line">
@@ -747,33 +768,32 @@ function Timeline({ goal, disabled, onToggle, onOpenImage }) {
         {goal.milestones.map((step, index) => {
           const next = !step.done && index === progress.done;
           return (
-            <button
-              className={`node ${step.done ? 'done' : ''} ${next ? 'next' : ''}`}
-              key={step.id}
-              onClick={() => onToggle(goal, step.id)}
-              disabled={disabled}
-              title={step.label}
-            >
-              <span>{step.done ? '✓' : index + 1}</span>
-              <em>{step.label}</em>
-              {step.deadline && <small>due {formatDate(step.deadline)}</small>}
+            <div className="node-wrap" key={step.id}>
+              <button
+                className={`node ${step.done ? 'done' : ''} ${next ? 'next' : ''}`}
+                onClick={() => onToggle(goal, step.id)}
+                disabled={disabled}
+                title={step.label}
+              >
+                <span>{step.done ? '✓' : index + 1}</span>
+                <em>{step.label}</em>
+                {step.deadline && <small>due {formatDate(step.deadline)}</small>}
+              </button>
               {step.images?.length > 0 && (
                 <div className="node-photos">
                   {step.images.slice(0, 3).map((imageData, imageIndex) => (
-                    <img
+                    <button
                       key={imageIndex}
-                      src={imageData}
-                      alt={`${step.label} milestone`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onOpenImage({ src: imageData, alt: `${step.label} milestone` });
-                      }}
-                    />
+                      type="button"
+                      onClick={() => onOpenImage({ src: imageData, alt: `${step.label} milestone` })}
+                    >
+                      <img src={imageData} alt={`${step.label} milestone`} />
+                    </button>
                   ))}
                   {step.images.length > 3 && <strong>+{step.images.length - 3}</strong>}
                 </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -822,11 +842,16 @@ function Gallery({ photos, goals, members, currentUser, onAdd, onDelete }) {
 
 function achievementCategory(goal) {
   const text = `${goal.title} ${(goal.milestones || []).map((step) => step.label).join(' ')}`.toLowerCase();
-  if (text.includes('education') || text.includes('training') || text.includes('learn')) return 'Education';
-  if (text.includes('community') || text.includes('event') || text.includes('meetup')) return 'Community';
-  if (text.includes('client') || text.includes('feedback')) return 'Client feedback';
-  if (text.includes('release') || text.includes('launch')) return 'Release';
-  return 'Hiring';
+  if (text.includes('education') || text.includes('training') || text.includes('learn')) return '🎓 Education & Learning';
+  if (text.includes('sport') || text.includes('health') || text.includes('run')) return '🏃 Health & Sport';
+  if (text.includes('travel') || text.includes('trip') || text.includes('adventure')) return '✈️ Travel & Adventure';
+  if (text.includes('food') || text.includes('cook') || text.includes('dinner')) return '🍳 Food & Cooking';
+  if (text.includes('pet') || text.includes('animal')) return '🐾 Animals & Pets';
+  if (text.includes('community') || text.includes('volunteer') || text.includes('kind')) return '❤️ Community & Kindness';
+  if (text.includes('creative') || text.includes('hobby') || text.includes('art')) return '🎨 Creativity & Hobbies';
+  if (text.includes('family') || text.includes('relationship')) return '👥 Relationships & Family';
+  if (text.includes('growth') || text.includes('personal')) return '🌟 Personal Growth';
+  return '💰 Milestones & Life';
 }
 
 function achievementItems(goals, wins, memberById) {
@@ -846,7 +871,7 @@ function achievementItems(goals, wins, memberById) {
         date: completionDate(goal),
         memberId: goal.memberId,
         member,
-        imageData: goalCoverImage(goal),
+        images: goalImages(goal),
         imageCount: goalImages(goal).length,
         score: progress.done,
       };
@@ -857,15 +882,15 @@ function achievementItems(goals, wins, memberById) {
       id: `manual-${win.id}`,
       rawId: win.id,
       source: 'Manual win',
-      category: win.category || 'Team moment',
+      category: win.category || '🌟 Personal Growth',
       title: win.title,
       note: win.note || 'A team win worth celebrating.',
       result: win.note || 'Shared success',
       date: win.date,
       memberId: win.memberId,
       member,
-      imageData: win.imageData,
-      imageCount: win.imageData ? 1 : 0,
+      images: win.images || [],
+      imageCount: win.images?.length || 0,
       score: 2,
     };
   });
@@ -891,8 +916,8 @@ function Achievements({ goals, wins, members, memberById, onAdd, onOpenImage }) 
   const badges = [
     { name: 'First Win', unlocked: items.length > 0 },
     { name: 'Goal Crusher', unlocked: doneGoals.length >= 3, detail: `${doneGoals.length}/3 goals` },
-    { name: 'Education', unlocked: items.some((item) => item.category === 'Education') },
-    { name: 'Community', unlocked: items.some((item) => item.category === 'Community') },
+    { name: 'Education', unlocked: items.some((item) => item.category === '🎓 Education & Learning') },
+    { name: 'Community', unlocked: items.some((item) => item.category === '❤️ Community & Kindness') },
     { name: 'Streak', unlocked: winsThisMonth >= 3, detail: `${winsThisMonth}/3 this month` },
   ];
   const hall = members
@@ -924,9 +949,9 @@ function Achievements({ goals, wins, members, memberById, onAdd, onOpenImage }) 
 
       {featured && (
         <article className="featured-win">
-          {featured.imageData ? (
-            <button onClick={() => onOpenImage({ src: featured.imageData, alt: featured.title })}>
-              <img src={featured.imageData} alt={featured.title} />
+          {featured.images?.[0] ? (
+            <button onClick={() => onOpenImage({ src: featured.images[0], alt: featured.title })}>
+              <img src={featured.images[0]} alt={featured.title} />
             </button>
           ) : (
             <div className="featured-empty">Achievement</div>
@@ -968,9 +993,9 @@ function Achievements({ goals, wins, members, memberById, onAdd, onOpenImage }) 
                 <em>{item.source}</em>
               </div>
               <p>{item.result}</p>
-              {item.imageData && (
-                <button className="achievement-thumb" onClick={() => onOpenImage({ src: item.imageData, alt: item.title })}>
-                  <img src={item.imageData} alt={item.title} />
+              {item.images?.[0] && (
+                <button className="achievement-thumb" onClick={() => onOpenImage({ src: item.images[0], alt: item.title })}>
+                  <img src={item.images[0]} alt={item.title} />
                   {item.imageCount > 1 && <strong>+{item.imageCount - 1}</strong>}
                 </button>
               )}
@@ -1306,7 +1331,7 @@ function AchievementModal({ members, currentUser, onSave, onClose }) {
         event.preventDefault();
         if (!title.trim() || !memberId) return;
         setBusy(true);
-        await onSave({ title: title.trim(), note: note.trim(), memberId, date, category, file });
+        await onSave({ title: title.trim(), note: note.trim(), memberId, date, category, files });
       }}>
         <label>Title<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label>
         <label>Description<textarea rows="4" value={note} onChange={(event) => setNote(event.target.value)} /></label>
@@ -1318,7 +1343,8 @@ function AchievementModal({ members, currentUser, onSave, onClose }) {
         <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}>
           {ACHIEVEMENT_CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
         </select></label>
-        <label>Photo<input type="file" accept="image/*" onChange={(event) => setFile(event.target.files?.[0] || null)} /></label>
+        <label>Photos<input type="file" accept="image/*" multiple onChange={(event) => setFiles(Array.from(event.target.files || []))} /></label>
+        {files.length > 0 && <span className="muted">{files.length} photos selected</span>}
         <ModalActions onClose={onClose} disabled={busy} />
       </form>
     </Modal>
