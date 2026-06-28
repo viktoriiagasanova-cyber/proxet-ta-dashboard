@@ -1323,7 +1323,7 @@ function AchievementModal({ members, currentUser, onSave, onClose }) {
   const [memberId, setMemberId] = useState(currentUser?.id || members[0]?.id || '');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [category, setCategory] = useState(ACHIEVEMENT_CATEGORIES[0]);
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   return (
     <Modal title="Add achievement" onClose={onClose}>
